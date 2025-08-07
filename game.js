@@ -32,6 +32,179 @@ class MirasYard {
         this.gameLoop();
     }
     
+    initializeVoice() {
+        // Initialize Web Speech API
+        this.voiceEnabled = 'speechSynthesis' in window;
+        this.currentVoice = null;
+        
+        if (this.voiceEnabled) {
+            // Wait for voices to load
+            const setVoice = () => {
+                const voices = speechSynthesis.getVoices();
+                console.log('Available voices:', voices.map(v => `${v.name} (${v.lang}) - ${v.gender || 'unknown'}`));
+                
+                // Priority order: female voices first, then English voices, then any voice
+                this.currentVoice = 
+                    // First priority: Female voices
+                    voices.find(voice => 
+                        voice.name.toLowerCase().includes('female') ||
+                        voice.name.toLowerCase().includes('woman') ||
+                        voice.name.toLowerCase().includes('girl') ||
+                        voice.name.toLowerCase().includes('zira') || // Microsoft Zira
+                        voice.name.toLowerCase().includes('susan') || // macOS Susan
+                        voice.name.toLowerCase().includes('karen') || // macOS Karen
+                        voice.name.toLowerCase().includes('samantha') || // macOS Samantha
+                        voice.name.toLowerCase().includes('victoria') // macOS Victoria
+                    ) ||
+                    // Second priority: Child or high-pitched voices
+                    voices.find(voice => 
+                        voice.name.toLowerCase().includes('child') ||
+                        voice.name.toLowerCase().includes('kid')
+                    ) ||
+                    // Third priority: English voices (often default to female)
+                    voices.find(voice => voice.lang.startsWith('en')) ||
+                    // Fallback: any available voice
+                    voices[0];
+                
+                console.log('Selected voice:', this.currentVoice?.name);
+            };
+            
+            if (speechSynthesis.getVoices().length === 0) {
+                speechSynthesis.onvoiceschanged = setVoice;
+            } else {
+                setVoice();
+            }
+        }
+        
+        // Praise phrases for different actions
+        this.praisePhrases = {
+            water: ['Good watering!', 'Nice job!', 'Great work!', 'Keep it up!'],
+            plant: ['Beautiful planting!', 'Good job growing!', 'Amazing garden!', 'Well done!'],
+            harvest: ['Perfect harvest!', 'Good picking!', 'Wonderful!', 'Excellent work!'],
+            mow: ['Great mowing!', 'Nice cutting!', 'Good job!', 'Well done!'],
+            paint: ['Beautiful colors!', 'Great painting!', 'So creative!', 'Amazing art!'],
+            butterfly: ['Great catch!', 'Nice work!', 'Well done!', 'Excellent!'],
+            general: ['Good job!', 'Well done!', 'Keep going!', 'Amazing!', 'Wonderful!'],
+            celebration: ['Fantastic work!', 'You are amazing!', 'Incredible job!', 'So proud of you!'],
+            counting: ['One!', 'Two!', 'Three!', 'Four!', 'Five!', 'Six!', 'Seven!', 'Eight!', 'Nine!', 'Ten!']
+        };
+    }
+    
+    speakPraise(category, customMessage = null) {
+        if (!this.voiceEnabled || !this.currentVoice) return;
+        
+        let message;
+        if (customMessage) {
+            message = customMessage;
+        } else if (this.praisePhrases[category]) {
+            const phrases = this.praisePhrases[category];
+            message = phrases[Math.floor(Math.random() * phrases.length)];
+        } else {
+            message = this.praisePhrases.general[Math.floor(Math.random() * this.praisePhrases.general.length)];
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.voice = this.currentVoice;
+        utterance.rate = 0.9; // Slightly faster
+        utterance.pitch = 1.5; // Higher pitch, more friendly
+        utterance.volume = 0.8;
+        
+        // Cancel any current speech and speak new phrase
+        speechSynthesis.cancel();
+        speechSynthesis.speak(utterance);
+    }
+    
+    incrementActionCount() {
+        this.actionCount++;
+        
+        // Every 5 actions, give special celebration praise and confetti
+        if (this.actionCount % 5 === 0) {
+            this.speakPraise('celebration');
+            this.createCelebrationConfetti();
+        }
+    }
+    
+    spawnAnimal() {
+        const animalType = this.animalTypes[Math.floor(Math.random() * this.animalTypes.length)];
+        const side = Math.random() > 0.5 ? 'left' : 'right'; // Which side to enter from
+        
+        let startX, startY, vx, vy;
+        
+        if (side === 'left') {
+            startX = -40;
+            startY = this.canvas.height * 0.6 + Math.random() * this.canvas.height * 0.3;
+            vx = animalType.speed;
+            vy = (Math.random() - 0.5) * 0.5; // Slight vertical drift
+        } else {
+            startX = this.canvas.width + 40;
+            startY = this.canvas.height * 0.6 + Math.random() * this.canvas.height * 0.3;
+            vx = -animalType.speed;
+            vy = (Math.random() - 0.5) * 0.5;
+        }
+        
+        // Special handling for Lux the dog - much bigger and special announcements
+        let animalSize;
+        if (animalType.isSpecial && animalType.name === 'lux') {
+            animalSize = 70 + Math.random() * 20; // Much bigger: 70-90px for Lux
+        } else {
+            animalSize = 40 + Math.random() * 20; // Regular size: 40-60px
+        }
+        
+        const animal = {
+            ...animalType,
+            x: startX,
+            y: startY,
+            vx: vx,
+            vy: vy,
+            bounceTimer: 0,
+            bounceOffset: 0,
+            size: animalSize
+        };
+        
+        this.animals.push(animal);
+        
+        // Special announcements for Lux!
+        if (animalType.isSpecial && animalType.name === 'lux') {
+            const luxGreetings = [
+                "Here comes Lux!",
+                "Lux is a good boy!",
+                "Look, it's Lux!",
+                "Hi Lux!",
+                "Good dog Lux!"
+            ];
+            const greeting = luxGreetings[Math.floor(Math.random() * luxGreetings.length)];
+            
+            setTimeout(() => {
+                this.speakPraise('general', greeting);
+            }, 500);
+        }
+    }
+    
+    
+    createCelebrationConfetti() {
+        // Create colorful confetti particles across the screen
+        const colors = ['#FF0000', '#FF8C00', '#FFD700', '#32CD32', '#1E90FF', '#8A2BE2', '#FF69B4'];
+        const confettiCount = 30;
+        
+        for (let i = 0; i < confettiCount; i++) {
+            const confetti = {
+                type: 'confetti',
+                x: Math.random() * this.canvas.width,
+                y: -20,
+                vx: (Math.random() - 0.5) * 6,
+                vy: Math.random() * 3 + 2,
+                rotation: Math.random() * 360,
+                rotationSpeed: (Math.random() - 0.5) * 10,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                size: Math.random() * 8 + 4,
+                life: 300, // Frames
+                maxLife: 300,
+                shape: Math.random() > 0.5 ? 'circle' : 'square'
+            };
+            this.effects.push(confetti);
+        }
+    }
+    
     initializeGarden() {
         // The entire yard starts as long grass (dark green pattern)
         // We only need to track cut areas and growing areas
@@ -48,6 +221,25 @@ class MirasYard {
         this.butterflies = []; // Flying butterflies
         this.season = 'spring'; // spring, summer, fall, winter
         this.lastActions = []; // For undo functionality
+        
+        // Verbal praise system
+        this.actionCount = 0; // Track total actions for celebrations
+        this.harvestCount = 0; // Track harvests for counting
+        this.initializeVoice();
+        
+        // Animal visitors system
+        this.animals = [];
+        this.animalSpawnTimer = 0;
+        
+        this.animalTypes = [
+            { emoji: '🐰', name: 'bunny', speed: 2.5, sound: 'hop' },
+            { emoji: '🐿️', name: 'squirrel', speed: 3.2, sound: 'chatter' },
+            { emoji: '🦔', name: 'hedgehog', speed: 1.8, sound: 'snuffle' },
+            { emoji: '🐸', name: 'frog', speed: 2.2, sound: 'ribbit' },
+            { emoji: '🦆', name: 'duck', speed: 2.0, sound: 'quack' },
+            { emoji: '🐱', name: 'cat', speed: 2.8, sound: 'meow' },
+            { emoji: '🐕', name: 'lux', speed: 2.6, sound: 'bark', isSpecial: true }
+        ];
         
         // Painting state
         this.currentColor = '#FF0000'; // Default red
@@ -301,52 +493,52 @@ class MirasYard {
         
         switch (this.currentTool) {
             case 'water':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e💧%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e💧%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'vegetable':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e🥕%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e🥕%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'flower':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e🌸%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e🌸%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'mower':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'32\' height=\'32\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3crect x=\'4\' y=\'16\' width=\'16\' height=\'6\' rx=\'1\' fill=\'%232E7D32\'/%3e%3crect x=\'6\' y=\'12\' width=\'12\' height=\'5\' rx=\'1\' fill=\'%23212121\'/%3e%3ccircle cx=\'8\' cy=\'24\' r=\'3\' fill=\'%23212121\'/%3e%3ccircle cx=\'8\' cy=\'24\' r=\'2\' fill=\'%23FFF\'/%3e%3ccircle cx=\'16\' cy=\'24\' r=\'3\' fill=\'%23212121\'/%3e%3ccircle cx=\'16\' cy=\'24\' r=\'2\' fill=\'%23FFF\'/%3e%3cline x1=\'18\' y1=\'14\' x2=\'28\' y2=\'4\' stroke=\'%23212121\' stroke-width=\'2\'/%3e%3c/svg%3e") 16 16, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'72\' height=\'72\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3crect x=\'12\' y=\'36\' width=\'36\' height=\'16\' rx=\'3\' fill=\'%232E7D32\'/%3e%3crect x=\'16\' y=\'26\' width=\'28\' height=\'14\' rx=\'3\' fill=\'%23212121\'/%3e%3ccircle cx=\'22\' cy=\'56\' r=\'8\' fill=\'%23212121\'/%3e%3ccircle cx=\'22\' cy=\'56\' r=\'6\' fill=\'%23FFF\'/%3e%3ccircle cx=\'38\' cy=\'56\' r=\'8\' fill=\'%23212121\'/%3e%3ccircle cx=\'38\' cy=\'56\' r=\'6\' fill=\'%23FFF\'/%3e%3cline x1=\'42\' y1=\'30\' x2=\'64\' y2=\'8\' stroke=\'%23212121\' stroke-width=\'4\'/%3e%3c/svg%3e") 36 36, auto';
                 break;
             case 'pick-flower':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'12\' font-size=\'12\'%3e✋%3c/text%3e%3ctext y=\'20\' x=\'12\' font-size=\'12\'%3e🌸%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'26\' font-size=\'24\' text-anchor=\'middle\'%3e✋%3c/text%3e%3ctext x=\'32\' y=\'50\' font-size=\'24\' text-anchor=\'middle\'%3e🌸%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'pick-vegetable':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'12\' font-size=\'12\'%3e✋%3c/text%3e%3ctext y=\'20\' x=\'12\' font-size=\'12\'%3e🥕%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'26\' font-size=\'24\' text-anchor=\'middle\'%3e✋%3c/text%3e%3ctext x=\'32\' y=\'50\' font-size=\'24\' text-anchor=\'middle\'%3e🥕%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'paint':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e🎨%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e🎨%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'shapes':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e⭐%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e⭐%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'rainbow':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e🌈%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e🌈%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'eraser':
                 cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e🧹%3c/text%3e%3c/svg%3e") 12 12, auto';
                 break;
             case 'butterfly':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e🦋%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e🦋%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'seasons':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e🍂%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e🍂%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'undo':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e↶%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e↶%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'reset':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e☁️%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e☁️%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
             case 'butterfly-net':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'32\' height=\'32\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3crect x=\'14\' y=\'16\' width=\'4\' height=\'14\' fill=\'%238D6E63\' rx=\'2\'/%3e%3ccircle cx=\'16\' cy=\'12\' r=\'10\' fill=\'none\' stroke=\'%23666\' stroke-width=\'2\'/%3e%3cg stroke=\'%23999\' stroke-width=\'1\' fill=\'none\'%3e%3cline x1=\'11\' y1=\'8\' x2=\'21\' y2=\'16\'/%3e%3cline x1=\'21\' y1=\'8\' x2=\'11\' y2=\'16\'/%3e%3c/g%3e%3c/svg%3e") 16 16, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'72\' height=\'72\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3c!-- Handle --%3e%3crect x=\'34\' y=\'40\' width=\'4\' height=\'20\' rx=\'2\' fill=\'%238D6E63\'/%3e%3c!-- Net rim --%3e%3cellipse cx=\'36\' cy=\'30\' rx=\'18\' ry=\'12\' fill=\'none\' stroke=\'%23424242\' stroke-width=\'3\'/%3e%3c!-- Net mesh --%3e%3cg stroke=\'%23666\' stroke-width=\'2\' opacity=\'0.7\'%3e%3c!-- Vertical lines --%3e%3cline x1=\'25\' y1=\'23\' x2=\'25\' y2=\'37\'/%3e%3cline x1=\'30\' y1=\'20\' x2=\'30\' y2=\'40\'/%3e%3cline x1=\'36\' y1=\'18\' x2=\'36\' y2=\'42\'/%3e%3cline x1=\'42\' y1=\'20\' x2=\'42\' y2=\'40\'/%3e%3cline x1=\'47\' y1=\'23\' x2=\'47\' y2=\'37\'/%3e%3c!-- Horizontal lines --%3e%3cline x1=\'20\' y1=\'26\' x2=\'52\' y2=\'26\'/%3e%3cline x1=\'22\' y1=\'30\' x2=\'50\' y2=\'30\'/%3e%3cline x1=\'25\' y1=\'34\' x2=\'47\' y2=\'34\'/%3e%3c/g%3e%3c!-- Star being caught --%3e%3ctext x=\'45\' y=\'22\' font-size=\'12\' text-anchor=\'middle\'%3e⭐%3c/text%3e%3c!-- Butterfly being caught --%3e%3ctext x=\'27\' y=\'28\' font-size=\'12\' text-anchor=\'middle\'%3e🦋%3c/text%3e%3c/svg%3e") 36 36, auto';
                 break;
             case 'broom':
-                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext y=\'20\' font-size=\'20\'%3e🧹%3c/text%3e%3c/svg%3e") 12 12, auto';
+                cursor = 'url("data:image/svg+xml;charset=UTF-8,%3csvg width=\'64\' height=\'64\' xmlns=\'http://www.w3.org/2000/svg\'%3e%3ctext x=\'32\' y=\'48\' font-size=\'48\' text-anchor=\'middle\'%3e🧹%3c/text%3e%3c/svg%3e") 32 32, auto';
                 break;
         }
         
@@ -428,6 +620,23 @@ class MirasYard {
     
     startInteraction(event) {
         this.isDrawing = true;
+        
+        // Give praise and count action for continuous tools at start of interaction
+        if (['water', 'mower', 'broom'].includes(this.currentTool)) {
+            const praiseCategory = this.currentTool === 'water' ? 'water' : 
+                                   this.currentTool === 'mower' ? 'mow' : 'general';
+            this.speakPraise(praiseCategory);
+            this.incrementActionCount();
+        }
+        
+        // For paint and rainbow tools, always start a new stroke on mouse down
+        if (this.currentTool === 'paint') {
+            this.createNewPaintStroke(event.x || 0, event.y || 0);
+        } else if (this.currentTool === 'rainbow') {
+            const colors = ['#FF0000', '#FF8C00', '#FFD700', '#32CD32', '#1E90FF', '#8A2BE2'];
+            this.createNewRainbowStroke(event.x || 0, event.y || 0, colors);
+        }
+        
         this.handleToolAction(event.x || 0, event.y || 0);
     }
     
@@ -480,6 +689,153 @@ class MirasYard {
                 this.catchButterfly(x, y);
                 break;
         }
+        
+        // Check for plant interactions (sounds) regardless of current tool
+        this.checkPlantInteraction(x, y);
+        
+        // Check for animal interactions (sounds) regardless of current tool
+        this.checkAnimalInteraction(x, y);
+    }
+    
+    checkPlantInteraction(x, y) {
+        // Check if clicking on plants to make them make sounds
+        this.plants.forEach(plant => {
+            const distance = Math.sqrt((plant.x - x) ** 2 + (plant.y - y) ** 2);
+            if (distance < 30) { // Touch radius
+                this.playPlantSound(plant);
+                
+                // Add gentle bounce animation
+                plant.bounceTimer = 30; // 30 frames of bouncing
+                
+                // Add sparkle effect around the plant
+                this.effects.push({
+                    type: 'sparkle',
+                    x: plant.x + (Math.random() - 0.5) * 20,
+                    y: plant.y + (Math.random() - 0.5) * 20,
+                    timer: 45,
+                    scale: 0.6,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 8,
+                    vx: (Math.random() - 0.5) * 1,
+                    vy: -1,
+                    emoji: '✨'
+                });
+            }
+        });
+    }
+    
+    playPlantSound(plant) {
+        // Different sounds for different plant types and varieties
+        if (plant.type === 'flower') {
+            switch (plant.variety) {
+                case 'sunflower':
+                    this.playSound(523, 0.3, 'sine'); // C5 - bright and sunny
+                    break;
+                case 'rose':
+                    this.playSound(659, 0.3, 'sine'); // E5 - elegant and high
+                    break;
+                case 'daisy':
+                    this.playSound(698, 0.3, 'sine'); // F5 - cheerful and light
+                    break;
+            }
+        } else if (plant.type === 'vegetable') {
+            switch (plant.variety) {
+                case 'carrot':
+                    this.playSound(392, 0.3, 'triangle'); // G4 - earthy, lower pitch
+                    break;
+                case 'tomato':
+                    this.playSound(440, 0.3, 'triangle'); // A4 - medium, rounded
+                    break;
+                case 'corn':
+                    this.playSound(349, 0.3, 'triangle'); // F4 - deep, substantial
+                    break;
+            }
+        }
+    }
+    
+    checkAnimalInteraction(x, y) {
+        // Check if clicking on animals to make them make sounds
+        this.animals.forEach(animal => {
+            const distance = Math.sqrt((animal.x - x) ** 2 + (animal.y - y) ** 2);
+            if (distance < 40) { // Touch radius (larger than plants since animals are bigger)
+                this.playAnimalSound(animal);
+                
+                // Add bounce animation to animal
+                animal.bounceTimer = 0; // Reset bounce to create excited bouncing
+                
+                // Add happy sparkle effect around the animal
+                for (let i = 0; i < 3; i++) {
+                    this.effects.push({
+                        type: 'sparkle',
+                        x: animal.x + (Math.random() - 0.5) * 30,
+                        y: animal.y + (Math.random() - 0.5) * 30,
+                        timer: 60,
+                        scale: 0.8,
+                        rotation: Math.random() * 360,
+                        rotationSpeed: (Math.random() - 0.5) * 10,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: -2,
+                        emoji: '💖'
+                    });
+                }
+            }
+        });
+    }
+    
+    playAnimalSound(animal) {
+        // Play cute animal sounds with Web Audio API
+        switch (animal.name) {
+            case 'bunny':
+                // High pitched, quick sound
+                this.playSound(880, 0.2, 'sine'); // A5
+                setTimeout(() => this.playSound(1047, 0.2, 'sine'), 150); // C6
+                break;
+            case 'squirrel':
+                // Chattering sound - quick sequence
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => this.playSound(698 + i * 50, 0.15, 'sawtooth'), i * 100);
+                }
+                break;
+            case 'hedgehog':
+                // Soft snuffle sound
+                this.playSound(294, 0.25, 'triangle'); // D4
+                setTimeout(() => this.playSound(330, 0.25, 'triangle'), 200); // E4
+                break;
+            case 'frog':
+                // Ribbit sound - low then high
+                this.playSound(147, 0.3, 'sawtooth'); // D3
+                setTimeout(() => this.playSound(294, 0.3, 'sawtooth'), 200); // D4
+                break;
+            case 'duck':
+                // Quack sound - nasal
+                this.playSound(220, 0.3, 'sawtooth'); // A3
+                setTimeout(() => this.playSound(196, 0.3, 'sawtooth'), 300); // G3
+                break;
+            case 'cat':
+                // Meow sound - rising then falling
+                this.playSound(330, 0.25, 'sine'); // E4
+                setTimeout(() => this.playSound(440, 0.25, 'sine'), 150); // A4
+                setTimeout(() => this.playSound(370, 0.25, 'sine'), 300); // F#4
+                break;
+            case 'lux':
+                // Special bark sound for Lux - deeper, more substantial
+                this.playSound(196, 0.4, 'sawtooth'); // G3 - deep bark
+                setTimeout(() => this.playSound(220, 0.3, 'sawtooth'), 200); // A3
+                setTimeout(() => this.playSound(175, 0.35, 'sawtooth'), 400); // F3 - trailing bark
+                
+                // Extra praise when clicking Lux!
+                const luxClickPhrases = [
+                    "Good boy Lux!",
+                    "Lux loves you!",
+                    "Such a good dog!",
+                    "Lux is happy!"
+                ];
+                const phrase = luxClickPhrases[Math.floor(Math.random() * luxClickPhrases.length)];
+                setTimeout(() => {
+                    this.speakPraise('general', phrase);
+                }, 800);
+                break;
+        }
     }
     
     waterArea(x, y) {
@@ -513,6 +869,24 @@ class MirasYard {
             }
         });
         
+        // BOOST nearby plants with water! 💧
+        this.plants.forEach(plant => {
+            const distance = Math.sqrt((plant.x - x) ** 2 + (plant.y - y) ** 2);
+            if (distance < 75) { // Within watering range
+                // Boost growth: increase target size up to 350% max
+                const maxPossibleSize = plant.baseSize * 3.5; // 350% of base
+                const currentMax = plant.targetSize;
+                const boost = plant.baseSize * 0.3; // 30% boost each watering
+                
+                plant.targetSize = Math.min(maxPossibleSize, currentMax + boost);
+                
+                // Also speed up growth slightly
+                plant.growthProgress = Math.min(plant.growthDuration - 1, plant.growthProgress + 30);
+                
+                console.log(`Watered ${plant.type}! Target size boosted from ${currentMax.toFixed(1)} to ${plant.targetSize.toFixed(1)}`);
+            }
+        });
+        
         this.addStarSeeds(1);
         this.addWaterEffect(x, y);
         this.playCuteSound('water'); // Water sound
@@ -534,11 +908,20 @@ class MirasYard {
                 variety: vegetables[Math.floor(Math.random() * vegetables.length)],
                 state: 'seeded',
                 growthTimer: 0,
-                size: 15
+                baseSize: 15,
+                currentSize: 8, // Start small
+                targetSize: 15 + Math.random() * 20, // 150-250% of base (15-35px)
+                growthDuration: 300 + Math.random() * 180, // 5-8 seconds at 60fps
+                growthProgress: 0,
+                bounceTimer: 0 // For touch interaction animation
             });
             this.addStarSeeds(2);
             this.playCuteSound('vegetable'); // Vegetable sound
             this.lastActions.push({type: 'plant', item: this.plants[this.plants.length - 1]});
+            
+            // Give praise and count action
+            this.speakPraise('plant');
+            this.incrementActionCount();
         }
     }
     
@@ -557,11 +940,20 @@ class MirasYard {
                 variety: flowers[Math.floor(Math.random() * flowers.length)],
                 state: 'ready',
                 growthTimer: 0,
-                size: 20
+                baseSize: 20,
+                currentSize: 10, // Start small
+                targetSize: 20 + Math.random() * 30, // 150-250% of base (20-50px)
+                growthDuration: 300 + Math.random() * 180, // 5-8 seconds at 60fps
+                growthProgress: 0,
+                bounceTimer: 0 // For touch interaction animation
             });
             this.addStarSeeds(2);
             this.playCuteSound('flower'); // Flower sound
             this.lastActions.push({type: 'plant', item: this.plants[this.plants.length - 1]});
+            
+            // Give praise and count action
+            this.speakPraise('plant');
+            this.incrementActionCount();
         }
     }
     
@@ -641,6 +1033,9 @@ class MirasYard {
         });
         
         this.addStarSeeds(Math.max(1, itemsCut));
+        if (itemsCut > 0) {
+            this.createSparkleEffect(x, y); // Success sparkles only when cutting!
+        }
         this.playCuteSound('mow'); // Cute mower sound
         this.lastActions.push({type: 'mow', area: this.cutAreas[this.cutAreas.length - 1]});
     }
@@ -653,11 +1048,22 @@ class MirasYard {
             if (distance < 25 && plant.type === 'flower' && plant.state === 'ready') {
                 // Add flying away animation for picked flower
                 this.createFlyAwayEffect(plant.x, plant.y, '🌸');
+                this.createSparkleEffect(x, y); // Success sparkles!
                 this.plants.splice(i, 1);
                 this.flowerCount++;
+                this.harvestCount++;
                 this.addStarSeeds(5);
                 console.log('Picked flower! Total flowers:', this.flowerCount);
                 this.playCuteSound('pickup'); // Cute pickup sound
+                
+                // Give praise with counting
+                this.speakPraise('harvest');
+                if (this.harvestCount <= 10) {
+                    setTimeout(() => {
+                        this.speakPraise('counting', this.praisePhrases.counting[this.harvestCount - 1]);
+                    }, 800); // Delay counting to let harvest praise finish
+                }
+                this.incrementActionCount();
                 break;
             }
         }
@@ -671,11 +1077,22 @@ class MirasYard {
             if (distance < 25 && plant.type === 'vegetable' && plant.state === 'ready') {
                 // Add flying away animation for picked vegetable
                 this.createFlyAwayEffect(plant.x, plant.y, '🥕');
+                this.createSparkleEffect(x, y); // Success sparkles!
                 this.plants.splice(i, 1);
                 this.vegetableCount++;
+                this.harvestCount++;
                 this.addStarSeeds(5);
                 console.log('Picked vegetable! Total vegetables:', this.vegetableCount);
                 this.playCuteSound('pickup'); // Cute pickup sound
+                
+                // Give praise with counting
+                this.speakPraise('harvest');
+                if (this.harvestCount <= 10) {
+                    setTimeout(() => {
+                        this.speakPraise('counting', this.praisePhrases.counting[this.harvestCount - 1]);
+                    }, 800); // Delay counting to let harvest praise finish
+                }
+                this.incrementActionCount();
                 break;
             }
         }
@@ -683,17 +1100,18 @@ class MirasYard {
     
     // NEW PAINTING AND CREATIVE TOOLS
     paintArea(x, y) {
+        // Only continue existing stroke during active drawing (new strokes created in startInteraction)
         if (this.isDrawing) {
             const stroke = this.paintStrokes[this.paintStrokes.length - 1];
-            if (stroke && stroke.color === this.currentColor && stroke.size === this.brushSize) {
-                // Add multiple interpolated points for ultra-smooth drawing
+            if (stroke && !stroke.isRainbow && stroke.color === this.currentColor && stroke.size === this.brushSize) {
+                // Continue current stroke - add interpolated points for smoothness
                 if (stroke.points.length > 0) {
                     const lastPoint = stroke.points[stroke.points.length - 1];
                     const distance = Math.sqrt((x - lastPoint.x) ** 2 + (y - lastPoint.y) ** 2);
                     
-                    // If points are far apart, interpolate between them
-                    if (distance > 10) {
-                        const steps = Math.ceil(distance / 5); // Create points every 5px
+                    // If points are far apart, interpolate between them for smoother lines
+                    if (distance > 8) { // Reduced threshold for smoother painting
+                        const steps = Math.ceil(distance / 4); // Smaller steps for smoother curves
                         for (let i = 1; i <= steps; i++) {
                             const t = i / steps;
                             const interpX = lastPoint.x + (x - lastPoint.x) * t;
@@ -706,13 +1124,16 @@ class MirasYard {
                 } else {
                     stroke.points.push({x, y});
                 }
-            } else {
+            } else if (stroke && (stroke.color !== this.currentColor || stroke.size !== this.brushSize)) {
+                // Color or size changed during drawing - create new stroke
                 this.createNewPaintStroke(x, y);
             }
-        } else {
-            this.createNewPaintStroke(x, y);
         }
-        this.playPaintNote(this.currentColor, this.brushSize); // Musical paint sound
+        // Only give effects during active drawing
+        if (this.isDrawing) {
+            this.createSparkleEffect(x, y); // Success sparkles!
+            this.playPaintNote(this.currentColor, this.brushSize); // Musical paint sound
+        }
     }
     
     createNewPaintStroke(x, y) {
@@ -723,11 +1144,19 @@ class MirasYard {
         };
         this.paintStrokes.push(newStroke);
         this.lastActions.push({type: 'paint', stroke: newStroke});
+        
+        // Give praise and count action for each new paint stroke
+        this.speakPraise('paint');
+        this.incrementActionCount();
     }
     
     broomSweep(x, y) {
         // Broom sweeps away ALL paint strokes in a wide area
         const sweepRadius = 60; // Wide sweep area
+        
+        // Track original counts for sparkle success detection
+        const originalStrokeCount = this.paintStrokes.length;
+        const originalShapeCount = this.shapes.length;
         
         // Remove paint strokes that intersect with broom
         this.paintStrokes = this.paintStrokes.filter(stroke => {
@@ -747,6 +1176,12 @@ class MirasYard {
             }
             return true;
         });
+        
+        // Only sparkles if we actually swept something
+        const sweptSomething = (originalStrokeCount > this.paintStrokes.length) || (originalShapeCount > this.shapes.length);
+        if (sweptSomething) {
+            this.createSparkleEffect(x, y); // Success sparkles!
+        }
         
         this.playCuteSound('erase'); // Sweep sound
     }
@@ -771,7 +1206,7 @@ class MirasYard {
         const initialButterflyCount = this.butterflies.length;
         this.butterflies = this.butterflies.filter(butterfly => {
             const distance = Math.sqrt((butterfly.x - x) ** 2 + (butterfly.y - y) ** 2);
-            if (distance < 80) { // Larger net catch radius for easier catching
+            if (distance < 100) { // Even larger net catch radius for toddlers
                 console.log('CAUGHT butterfly at distance:', distance.toFixed(1));
                 // Add flying away animation
                 this.createFlyAwayEffect(butterfly.x, butterfly.y, '🦋');
@@ -787,7 +1222,7 @@ class MirasYard {
         const initialShapeCount = this.shapes.length;
         this.shapes = this.shapes.filter(shape => {
             const distance = Math.sqrt((shape.x - x) ** 2 + (shape.y - y) ** 2);
-            if (distance < 80) {
+            if (distance < 100) {
                 console.log('CAUGHT emoji shape at distance:', distance.toFixed(1));
                 // Add flying away animation
                 this.createFlyAwayEffect(shape.x, shape.y, shape.emoji);
@@ -802,6 +1237,7 @@ class MirasYard {
         console.log('Net results: butterflies:', this.butterflies.length, '(caught:', initialButterflyCount - this.butterflies.length, '), shapes:', this.shapes.length, '(caught:', initialShapeCount - this.shapes.length, ')');
         
         if (caught) {
+            this.createSparkleEffect(x, y); // Success sparkles!
             this.playCuteSound('pickup');
         } else {
             console.log('Net missed - no items caught!');
@@ -821,6 +1257,7 @@ class MirasYard {
         this.shapes.push(shape);
         this.lastActions.push({type: 'shape', shape: shape});
         this.addStarSeeds(1);
+        this.createSparkleEffect(x, y); // Success sparkles!
         // Magical sparkle sound for shapes - like fairy dust
         const magicNotes = [659, 784, 880, 988]; // E5, G5, A5, B5 - bright and magical
         const note = magicNotes[Math.floor(Math.random() * magicNotes.length)];
@@ -828,18 +1265,17 @@ class MirasYard {
     }
     
     paintRainbow(x, y) {
-        const colors = ['#FF0000', '#FF8C00', '#FFD700', '#32CD32', '#1E90FF', '#8A2BE2'];
-        
+        // Only continue existing rainbow stroke during active drawing (new strokes created in startInteraction)
         if (this.isDrawing) {
             const lastRainbow = this.paintStrokes[this.paintStrokes.length - 1];
             if (lastRainbow && lastRainbow.isRainbow) {
-                // Add smooth interpolation for rainbow too
+                // Add smooth interpolation for rainbow
                 if (lastRainbow.points.length > 0) {
                     const lastPoint = lastRainbow.points[lastRainbow.points.length - 1];
                     const distance = Math.sqrt((x - lastPoint.x) ** 2 + (y - lastPoint.y) ** 2);
                     
-                    if (distance > 10) {
-                        const steps = Math.ceil(distance / 5);
+                    if (distance > 8) { // Reduced threshold for smoother rainbow painting
+                        const steps = Math.ceil(distance / 4); // Smaller steps for smoother curves
                         for (let i = 1; i <= steps; i++) {
                             const t = i / steps;
                             const interpX = lastPoint.x + (x - lastPoint.x) * t;
@@ -852,16 +1288,13 @@ class MirasYard {
                 } else {
                     lastRainbow.points.push({x, y});
                 }
-            } else {
-                this.createNewRainbowStroke(x, y, colors);
             }
-        } else {
-            this.createNewRainbowStroke(x, y, colors);
         }
-        // Rainbow sound - happy ascending notes like a musical rainbow
-        const rainbowNotes = [523, 587, 659, 698, 784, 880]; // C5 to A5 major scale
-        const noteIndex = Math.floor(Math.random() * rainbowNotes.length);
-        this.playCuteSound('rainbow'); // Cute rainbow sound
+        // Only give effects during active drawing
+        if (this.isDrawing) {
+            this.createSparkleEffect(x, y); // Success sparkles!
+            this.playCuteSound('rainbow'); // Cute rainbow sound
+        }
     }
     
     createNewRainbowStroke(x, y, colors) {
@@ -884,6 +1317,7 @@ class MirasYard {
             vx: 0,
             vy: 0,
             flutterTimer: 0,
+            size: 32 + Math.random() * 16, // 32-48px (was 20px)
             emoji: ['🦋', '🧚‍♀️'][Math.floor(Math.random() * 2)]
         };
         
@@ -967,6 +1401,27 @@ class MirasYard {
         });
     }
     
+    createSparkleEffect(x, y) {
+        // Instant gratification sparkles for every tap!
+        const sparkleEmojis = ['✨', '⭐', '💫', '🌟', '⚡'];
+        const numSparkles = 3 + Math.floor(Math.random() * 3); // 3-5 sparkles
+        
+        for (let i = 0; i < numSparkles; i++) {
+            this.effects.push({
+                type: 'sparkle',
+                x: x + (Math.random() - 0.5) * 60, // Spread around tap point
+                y: y + (Math.random() - 0.5) * 60,
+                vx: (Math.random() - 0.5) * 4, // Gentle float
+                vy: -1 - Math.random() * 3, // Upward float
+                timer: 45 + Math.random() * 15, // 0.75-1 seconds
+                emoji: sparkleEmojis[Math.floor(Math.random() * sparkleEmojis.length)],
+                scale: 0.8 + Math.random() * 0.4, // 0.8-1.2 scale
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.15
+            });
+        }
+    }
+    
     resetGarden() {
         this.initializeGarden();
         this.flowerCount = 0;
@@ -986,13 +1441,27 @@ class MirasYard {
     }
     
     update() {
-        // Update plant growth
+        // Update plant growth animations
         this.plants.forEach(plant => {
+            // Handle vegetable state changes (much faster now!)
             if (plant.type === 'vegetable' && plant.state === 'seeded') {
                 plant.growthTimer++;
-                if (plant.growthTimer > 180) { // 3 seconds
+                if (plant.growthTimer > 30) { // 0.5 seconds - just long enough to see seeding
                     plant.state = 'ready';
                 }
+            }
+            
+            // Animate size growth for all plants
+            if (plant.growthProgress < plant.growthDuration) {
+                plant.growthProgress++;
+                
+                // Smooth easing function (starts fast, slows down)
+                const progress = plant.growthProgress / plant.growthDuration;
+                const easedProgress = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+                
+                // Interpolate size from small to target
+                plant.currentSize = plant.currentSize * 0.95 + 
+                    (plant.baseSize + (plant.targetSize - plant.baseSize) * easedProgress) * 0.05;
             }
         });
         
@@ -1052,6 +1521,41 @@ class MirasYard {
             if (butterfly.y > this.canvas.height) butterfly.y = 0;
         });
         
+        // Update animal visitors
+        this.animalSpawnTimer++;
+        
+        // Spawn a new animal every 10-15 seconds (600-900 frames at 60fps)
+        if (this.animalSpawnTimer > 600 + Math.random() * 300) {
+            this.spawnAnimal();
+            this.animalSpawnTimer = 0;
+        }
+        
+        // Update existing animals
+        this.animals = this.animals.filter(animal => {
+            animal.x += animal.vx;
+            animal.y += animal.vy;
+            
+            // Add slight bounce to walking
+            animal.bounceTimer += animal.speed * 0.2;
+            animal.bounceOffset = Math.sin(animal.bounceTimer) * 2;
+            
+            // Remove animals that have left the screen
+            return animal.x > -50 && animal.x < this.canvas.width + 50 && 
+                   animal.y > -50 && animal.y < this.canvas.height + 50;
+        });
+        
+        // Update plants
+        this.plants.forEach(plant => {
+            // Update bounce animation from touch interactions
+            if (plant.bounceTimer > 0) {
+                plant.bounceTimer--;
+                plant.bounceOffset = Math.sin(plant.bounceTimer * 0.4) * 3;
+            } else {
+                plant.bounceOffset = 0;
+            }
+        });
+        
+        
         // Update effects
         this.effects = this.effects.filter(effect => {
             effect.timer--;
@@ -1066,6 +1570,24 @@ class MirasYard {
                 effect.vy += 0.1; // Gravity
                 effect.rotation += effect.rotationSpeed;
                 effect.scale *= 0.995; // Slight shrinking
+            } else if (effect.type === 'sparkle') {
+                // Update sparkle animations
+                effect.x += effect.vx;
+                effect.y += effect.vy;
+                effect.vy *= 0.98; // Slow down
+                effect.vx *= 0.98;
+                effect.rotation += effect.rotationSpeed;
+                effect.scale *= 0.992; // Gradual shrinking
+            } else if (effect.type === 'confetti') {
+                // Update confetti physics
+                effect.x += effect.vx;
+                effect.y += effect.vy;
+                effect.vy += 0.2; // Gravity
+                effect.vx *= 0.99; // Air resistance
+                effect.rotation += effect.rotationSpeed;
+                effect.life--;
+                
+                return effect.life > 0;
             }
             
             return effect.timer > 0;
@@ -1154,6 +1676,12 @@ class MirasYard {
             this.renderButterfly(butterfly);
         });
         
+        // Draw animal visitors
+        this.animals.forEach(animal => {
+            this.renderAnimal(animal);
+        });
+        
+        
         // Draw effects
         this.effects.forEach(effect => {
             this.renderEffect(effect);
@@ -1215,7 +1743,15 @@ class MirasYard {
     
     
     renderPlant(plant) {
-        this.ctx.font = `${plant.size + 10}px Arial`;
+        this.ctx.save();
+        
+        // Apply bounce offset from touch interactions
+        const bounceY = plant.bounceOffset || 0;
+        this.ctx.translate(plant.x, plant.y + bounceY);
+        
+        // Use animated size for gradual growth
+        const size = plant.currentSize || plant.size || plant.baseSize;
+        this.ctx.font = `${size + 10}px Arial`;
         this.ctx.textAlign = 'center';
         
         let emoji;
@@ -1235,13 +1771,15 @@ class MirasYard {
             }
         }
         
-        // Add shadow
+        // Add shadow (relative to translate position)
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        this.ctx.fillText(emoji, plant.x + 2, plant.y + 2);
+        this.ctx.fillText(emoji, 2, 2);
         
-        // Add main emoji
+        // Add main emoji (relative to translate position)
         this.ctx.fillStyle = 'black';
-        this.ctx.fillText(emoji, plant.x, plant.y);
+        this.ctx.fillText(emoji, 0, 0);
+        
+        this.ctx.restore();
     }
     
     renderEffect(effect) {
@@ -1265,6 +1803,35 @@ class MirasYard {
             this.ctx.textAlign = 'center';
             this.ctx.fillStyle = `rgba(0, 0, 0, ${Math.max(0, effect.timer / 90)})`;
             this.ctx.fillText(effect.emoji, 0, 0);
+            this.ctx.restore();
+        } else if (effect.type === 'sparkle') {
+            // Render sparkles with rotation and fading
+            this.ctx.save();
+            this.ctx.translate(effect.x, effect.y);
+            this.ctx.rotate(effect.rotation);
+            this.ctx.scale(effect.scale, effect.scale);
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${Math.max(0, effect.timer / 60)})`; // Golden sparkle
+            this.ctx.fillText(effect.emoji, 0, 0);
+            this.ctx.restore();
+        } else if (effect.type === 'confetti') {
+            // Render celebration confetti
+            this.ctx.save();
+            this.ctx.translate(effect.x, effect.y);
+            this.ctx.rotate(effect.rotation * Math.PI / 180);
+            
+            const alpha = Math.max(0, effect.life / effect.maxLife);
+            this.ctx.fillStyle = effect.color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+            
+            if (effect.shape === 'circle') {
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, effect.size / 2, 0, 2 * Math.PI);
+                this.ctx.fill();
+            } else {
+                // Square confetti
+                this.ctx.fillRect(-effect.size / 2, -effect.size / 2, effect.size, effect.size);
+            }
             this.ctx.restore();
         }
     }
@@ -1322,13 +1889,45 @@ class MirasYard {
         const flutter = Math.sin(butterfly.flutterTimer * 0.3) * 5;
         this.ctx.rotate(flutter * Math.PI / 180);
         
-        this.ctx.font = '20px Arial';
+        // Use butterfly's individual size (much bigger for toddlers)
+        this.ctx.font = `${butterfly.size}px Arial`;
         this.ctx.textAlign = 'center';
+        
+        // Add subtle shadow for better visibility
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.fillText(butterfly.emoji, 2, 2);
+        
+        // Main butterfly
         this.ctx.fillStyle = 'black';
         this.ctx.fillText(butterfly.emoji, 0, 0);
         
         this.ctx.restore();
     }
+    
+    renderAnimal(animal) {
+        this.ctx.save();
+        this.ctx.translate(animal.x, animal.y + animal.bounceOffset);
+        
+        // Flip animal sprite based on movement direction
+        if (animal.vx < 0) {
+            this.ctx.scale(-1, 1);
+        }
+        
+        // Use animal's size
+        this.ctx.font = `${animal.size}px Arial`;
+        this.ctx.textAlign = 'center';
+        
+        // Add shadow for better visibility
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        this.ctx.fillText(animal.emoji, 1, 1);
+        
+        // Main animal
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillText(animal.emoji, 0, 0);
+        
+        this.ctx.restore();
+    }
+    
 }
 
 // Initialize game with splash screen

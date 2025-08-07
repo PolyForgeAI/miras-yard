@@ -272,6 +272,16 @@ body {
     filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
 }
 
+.tool-icon.butterfly-net-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tool-icon.butterfly-net-icon svg {
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+}
+
 .tool:hover .tool-icon {
     transform: scale(1.1) rotate(5deg);
     filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.3));
