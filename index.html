@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<!-- Version 1.2.0 - Updated: 2025-08-07 06:04 PST -->
+<!-- Added: Reorganized toolbar, proper mower icon, enhanced game field -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <title>Mira's Yard - Digital Garden</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Splash Screen with Custom Image Placeholder -->
+    <div class="splash-screen" id="splash-screen">
+        <div class="splash-content">
+            <svg width="100%" height="100%" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" class="splash-graphic">
+                <!-- Sky gradient background -->
+                <defs>
+                    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#E0F6FF;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="rainbowGrad">
+                        <stop offset="0%" style="stop-color:#FF0000;stop-opacity:0.8" />
+                        <stop offset="16.66%" style="stop-color:#FF8C00;stop-opacity:0.8" />
+                        <stop offset="33.33%" style="stop-color:#FFD700;stop-opacity:0.8" />
+                        <stop offset="50%" style="stop-color:#32CD32;stop-opacity:0.8" />
+                        <stop offset="66.66%" style="stop-color:#00CED1;stop-opacity:0.8" />
+                        <stop offset="83.33%" style="stop-color:#4B0082;stop-opacity:0.8" />
+                        <stop offset="100%" style="stop-color:#8B008B;stop-opacity:0.8" />
+                    </linearGradient>
+                </defs>
+                
+                <!-- Sky -->
+                <rect width="1200" height="500" fill="url(#skyGrad)"/>
+                
+                <!-- Rainbow arc -->
+                <path d="M 100 300 Q 600 50 1100 300" stroke="url(#rainbowGrad)" stroke-width="40" fill="none" opacity="0.7"/>
+                <path d="M 100 310 Q 600 60 1100 310" stroke="url(#rainbowGrad)" stroke-width="35" fill="none" opacity="0.6"/>
+                <path d="M 100 320 Q 600 70 1100 320" stroke="url(#rainbowGrad)" stroke-width="30" fill="none" opacity="0.5"/>
+                
+                <!-- Ground/Grass -->
+                <rect y="500" width="1200" height="300" fill="#7CB342"/>
+                
+                <!-- Grass blades texture -->
+                <g id="grass-pattern">
+                    <path d="M0,500 Q2,485 0,470" stroke="#5D8C2F" stroke-width="2" fill="none"/>
+                    <path d="M5,500 Q3,480 5,465" stroke="#6B9F36" stroke-width="2" fill="none"/>
+                    <path d="M10,500 Q12,482 10,468" stroke="#5D8C2F" stroke-width="2" fill="none"/>
+                </g>
+                <!-- Repeat grass pattern across the ground -->
+                <use href="#grass-pattern" x="20"/>
+                <use href="#grass-pattern" x="40"/>
+                <use href="#grass-pattern" x="60"/>
+                <use href="#grass-pattern" x="80"/>
+                <use href="#grass-pattern" x="100"/>
+                <use href="#grass-pattern" x="120"/>
+                <use href="#grass-pattern" x="140"/>
+                <use href="#grass-pattern" x="160"/>
+                <use href="#grass-pattern" x="180"/>
+                <use href="#grass-pattern" x="200"/>
+                <use href="#grass-pattern" x="300"/>
+                <use href="#grass-pattern" x="400"/>
+                <use href="#grass-pattern" x="500"/>
+                <use href="#grass-pattern" x="600"/>
+                <use href="#grass-pattern" x="700"/>
+                <use href="#grass-pattern" x="800"/>
+                <use href="#grass-pattern" x="900"/>
+                <use href="#grass-pattern" x="1000"/>
+                <use href="#grass-pattern" x="1100"/>
+                
+                <!-- Realistic Lawnmower -->
+                <g transform="translate(750, 450)">
+                    <!-- Mower body -->
+                    <rect x="-40" y="0" width="80" height="50" rx="5" fill="#C62828" stroke="#8B0000" stroke-width="2"/>
+                    <!-- Engine housing -->
+                    <rect x="-30" y="-10" width="60" height="20" rx="3" fill="#757575" stroke="#424242" stroke-width="1"/>
+                    <!-- Pull cord -->
+                    <circle cx="35" cy="-5" r="4" fill="#424242"/>
+                    <path d="M35,-5 Q45,-5 48,-2" stroke="#333" stroke-width="2" fill="none"/>
+                    <!-- Wheels -->
+                    <circle cx="-30" cy="50" r="10" fill="#2E2E2E" stroke="#000" stroke-width="2"/>
+                    <circle cx="30" cy="50" r="10" fill="#2E2E2E" stroke="#000" stroke-width="2"/>
+                    <!-- Wheel tread -->
+                    <line x1="-30" y1="40" x2="-30" y2="60" stroke="#666" stroke-width="1"/>
+                    <line x1="-40" y1="50" x2="-20" y2="50" stroke="#666" stroke-width="1"/>
+                    <line x1="30" y1="40" x2="30" y2="60" stroke="#666" stroke-width="1"/>
+                    <line x1="20" y1="50" x2="40" y2="50" stroke="#666" stroke-width="1"/>
+                    <!-- Handle -->
+                    <rect x="-3" y="-50" width="6" height="40" fill="#8D6E63" rx="2"/>
+                    <rect x="-15" y="-55" width="30" height="8" rx="4" fill="#6D4C41"/>
+                    <!-- Grass discharge -->
+                    <rect x="40" y="15" width="15" height="20" fill="#4CAF50" rx="2" opacity="0.7"/>
+                    <!-- Blade housing detail -->
+                    <ellipse cx="0" cy="35" rx="35" ry="8" fill="#9E9E9E" opacity="0.5"/>
+                </g>
+                
+                <!-- Garden Tools -->
+                <!-- Trowel -->
+                <g transform="translate(300, 550) rotate(-15)">
+                    <path d="M0,0 L0,40" stroke="#8D6E63" stroke-width="4"/>
+                    <path d="M-8,40 Q0,60 8,40 L8,40 L0,40 Z" fill="#757575" stroke="#424242" stroke-width="1"/>
+                    <circle cx="0" cy="0" r="5" fill="#6D4C41"/>
+                </g>
+                
+                <!-- Rake -->
+                <g transform="translate(400, 540) rotate(10)">
+                    <rect x="-2" y="0" width="4" height="50" fill="#8D6E63"/>
+                    <rect x="-15" y="50" width="30" height="3" fill="#757575"/>
+                    <line x1="-12" y1="53" x2="-12" y2="62" stroke="#757575" stroke-width="2"/>
+                    <line x1="-6" y1="53" x2="-6" y2="62" stroke="#757575" stroke-width="2"/>
+                    <line x1="0" y1="53" x2="0" y2="62" stroke="#757575" stroke-width="2"/>
+                    <line x1="6" y1="53" x2="6" y2="62" stroke="#757575" stroke-width="2"/>
+                    <line x1="12" y1="53" x2="12" y2="62" stroke="#757575" stroke-width="2"/>
+                </g>
+                
+                <!-- Garden Shears -->
+                <g transform="translate(500, 560)">
+                    <path d="M0,0 L-10,25" stroke="#757575" stroke-width="3"/>
+                    <path d="M0,0 L10,25" stroke="#757575" stroke-width="3"/>
+                    <circle cx="0" cy="0" r="3" fill="#424242"/>
+                    <ellipse cx="-10" cy="28" rx="4" ry="8" fill="#E91E63"/>
+                    <ellipse cx="10" cy="28" rx="4" ry="8" fill="#E91E63"/>
+                    <!-- Blades -->
+                    <path d="M-10,25 Q-15,15 -12,10" stroke="#C0C0C0" stroke-width="2" fill="none"/>
+                    <path d="M10,25 Q15,15 12,10" stroke="#C0C0C0" stroke-width="2" fill="none"/>
+                </g>
+                
+                <!-- Watering Can -->
+                <g transform="translate(200, 530)">
+                    <ellipse cx="0" cy="20" rx="25" ry="20" fill="#4FC3F7" stroke="#0288D1" stroke-width="2"/>
+                    <path d="M-25,20 Q-30,5 -20,0" stroke="#0288D1" stroke-width="3" fill="none"/>
+                    <path d="M20,10 L35,5 L38,8" stroke="#0288D1" stroke-width="3" fill="none"/>
+                    <circle cx="38" cy="8" r="4" fill="#757575"/>
+                    <!-- Water droplets from spout -->
+                    <circle cx="40" cy="12" r="2" fill="#4FC3F7" opacity="0.6"/>
+                    <circle cx="42" cy="16" r="1.5" fill="#4FC3F7" opacity="0.5"/>
+                    <circle cx="39" cy="18" r="1" fill="#4FC3F7" opacity="0.4"/>
+                </g>
+                
+                <!-- Flowers -->
+                <!-- Sunflower -->
+                <g transform="translate(600, 480)">
+                    <rect x="-3" y="0" width="6" height="40" fill="#228B22"/>
+                    <circle cx="0" cy="-10" r="20" fill="#FFD700"/>
+                    <circle cx="0" cy="-10" r="8" fill="#8B4513"/>
+                    <!-- Petals -->
+                    <ellipse cx="0" cy="-35" rx="6" ry="12" fill="#FFD700"/>
+                    <ellipse cx="-20" cy="-20" rx="12" ry="6" fill="#FFD700" transform="rotate(-45 -20 -20)"/>
+                    <ellipse cx="20" cy="-20" rx="12" ry="6" fill="#FFD700" transform="rotate(45 20 -20)"/>
+                    <ellipse cx="0" cy="15" rx="6" ry="12" fill="#FFD700"/>
+                    <ellipse cx="-25" cy="-10" rx="12" ry="6" fill="#FFD700"/>
+                    <ellipse cx="25" cy="-10" rx="12" ry="6" fill="#FFD700"/>
+                    <ellipse cx="-20" cy="0" rx="12" ry="6" fill="#FFD700" transform="rotate(45 -20 0)"/>
+                    <ellipse cx="20" cy="0" rx="12" ry="6" fill="#FFD700" transform="rotate(-45 20 0)"/>
+                </g>
+                
+                <!-- Rose -->
+                <g transform="translate(700, 490)">
+                    <rect x="-2" y="0" width="4" height="30" fill="#228B22"/>
+                    <path d="M-3,5 L-6,8 L-3,11" stroke="#228B22" stroke-width="1" fill="none"/>
+                    <circle cx="0" cy="-8" r="12" fill="#FF1744"/>
+                    <circle cx="-4" cy="-10" r="8" fill="#FF5252" opacity="0.8"/>
+                    <circle cx="4" cy="-6" r="8" fill="#FF5252" opacity="0.8"/>
+                    <circle cx="0" cy="-8" r="5" fill="#FF8A80" opacity="0.7"/>
+                </g>
+                
+                <!-- Daisy -->
+                <g transform="translate(850, 485)">
+                    <rect x="-2" y="0" width="4" height="35" fill="#228B22"/>
+                    <circle cx="0" cy="-10" r="6" fill="#FFD700"/>
+                    <!-- White petals -->
+                    <ellipse cx="0" cy="-20" rx="4" ry="8" fill="white"/>
+                    <ellipse cx="-10" cy="-10" rx="8" ry="4" fill="white"/>
+                    <ellipse cx="10" cy="-10" rx="8" ry="4" fill="white"/>
+                    <ellipse cx="0" cy="0" rx="4" ry="8" fill="white"/>
+                    <ellipse cx="-7" cy="-17" rx="4" ry="8" fill="white" transform="rotate(-45 -7 -17)"/>
+                    <ellipse cx="7" cy="-17" rx="4" ry="8" fill="white" transform="rotate(45 7 -17)"/>
+                    <ellipse cx="-7" cy="-3" rx="4" ry="8" fill="white" transform="rotate(45 -7 -3)"/>
+                    <ellipse cx="7" cy="-3" rx="4" ry="8" fill="white" transform="rotate(-45 7 -3)"/>
+                </g>
+                
+                <!-- Butterflies -->
+                <!-- Butterfly 1 -->
+                <g transform="translate(150, 200)">
+                    <ellipse cx="-8" cy="0" rx="12" ry="20" fill="#FF6F00" opacity="0.8" transform="rotate(-20 -8 0)"/>
+                    <ellipse cx="8" cy="0" rx="12" ry="20" fill="#FF6F00" opacity="0.8" transform="rotate(20 8 0)"/>
+                    <ellipse cx="-8" cy="5" rx="10" ry="15" fill="#FFB300" opacity="0.8" transform="rotate(-25 -8 5)"/>
+                    <ellipse cx="8" cy="5" rx="10" ry="15" fill="#FFB300" opacity="0.8" transform="rotate(25 8 5)"/>
+                    <rect x="-2" y="-5" width="4" height="15" rx="2" fill="#5D4037"/>
+                    <circle cx="-6" cy="-3" r="2" fill="white"/>
+                    <circle cx="6" cy="-3" r="2" fill="white"/>
+                    <circle cx="-10" cy="5" r="2" fill="#5D4037"/>
+                    <circle cx="10" cy="5" r="2" fill="#5D4037"/>
+                </g>
+                
+                <!-- Butterfly 2 -->
+                <g transform="translate(950, 250) scale(0.8)">
+                    <ellipse cx="-8" cy="0" rx="12" ry="20" fill="#7B1FA2" opacity="0.8" transform="rotate(-20 -8 0)"/>
+                    <ellipse cx="8" cy="0" rx="12" ry="20" fill="#7B1FA2" opacity="0.8" transform="rotate(20 8 0)"/>
+                    <ellipse cx="-8" cy="5" rx="10" ry="15" fill="#BA68C8" opacity="0.8" transform="rotate(-25 -8 5)"/>
+                    <ellipse cx="8" cy="5" rx="10" ry="15" fill="#BA68C8" opacity="0.8" transform="rotate(25 8 5)"/>
+                    <rect x="-2" y="-5" width="4" height="15" rx="2" fill="#5D4037"/>
+                </g>
+                
+                <!-- Butterfly 3 -->
+                <g transform="translate(550, 150) scale(1.2)">
+                    <ellipse cx="-8" cy="0" rx="12" ry="20" fill="#0288D1" opacity="0.8" transform="rotate(-20 -8 0)"/>
+                    <ellipse cx="8" cy="0" rx="12" ry="20" fill="#0288D1" opacity="0.8" transform="rotate(20 8 0)"/>
+                    <ellipse cx="-8" cy="5" rx="10" ry="15" fill="#4FC3F7" opacity="0.8" transform="rotate(-25 -8 5)"/>
+                    <ellipse cx="8" cy="5" rx="10" ry="15" fill="#4FC3F7" opacity="0.8" transform="rotate(25 8 5)"/>
+                    <rect x="-2" y="-5" width="4" height="15" rx="2" fill="#5D4037"/>
+                    <circle cx="-6" cy="0" r="1.5" fill="white"/>
+                    <circle cx="6" cy="0" r="1.5" fill="white"/>
+                </g>
+                
+                <!-- Title Text -->
+                <text x="600" y="380" text-anchor="middle" font-family="Comic Sans MS, cursive" font-size="72" font-weight="bold" fill="#2E7D32">Mira's Yard</text>
+                <text x="603" y="383" text-anchor="middle" font-family="Comic Sans MS, cursive" font-size="72" font-weight="bold" fill="#1B5E20" opacity="0.3">Mira's Yard</text>
+                
+                <!-- Subtitle -->
+                <text x="600" y="420" text-anchor="middle" font-family="Comic Sans MS, cursive" font-size="28" fill="#5D4037">Tap anywhere to begin!</text>
+            </svg>
+            <div class="splash-loader">
+                <div class="loader-flower"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <!-- Game Title (integrated into game area) -->
+        <div class="game-title">
+                <!-- Sky background -->
+                <defs>
+                    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#98FB98;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#FFE4B5;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#FF6B6B;stop-opacity:1" />
+                        <stop offset="25%" style="stop-color:#4ECDC4;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#45B7D1;stop-opacity:1" />
+                        <stop offset="75%" style="stop-color:#96CEB4;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#FFEAA7;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                
+                <!-- Background -->
+                <rect width="100%" height="100%" fill="url(#skyGradient)" rx="15"/>
+                
+                <!-- Decorative elements -->
+                <!-- Clouds -->
+                <ellipse cx="100" cy="20" rx="15" ry="8" fill="white" opacity="0.8"/>
+                <ellipse cx="108" cy="18" rx="12" ry="6" fill="white" opacity="0.8"/>
+                <ellipse cx="700" cy="25" rx="18" ry="10" fill="white" opacity="0.8"/>
+                <ellipse cx="710" cy="22" rx="14" ry="7" fill="white" opacity="0.8"/>
+                
+                <!-- Sun -->
+                <circle cx="750" cy="25" r="12" fill="#FFD700"/>
+                <g stroke="#FFD700" stroke-width="2" stroke-linecap="round">
+                    <line x1="750" y1="8" x2="750" y2="4"/>
+                    <line x1="750" y1="46" x2="750" y2="50"/>
+                    <line x1="733" y1="25" x2="729" y2="25"/>
+                    <line x1="771" y1="25" x2="775" y2="25"/>
+                    <line x1="738" y1="13" x2="735" y2="10"/>
+                    <line x1="762" y1="37" x2="765" y2="40"/>
+                    <line x1="762" y1="13" x2="765" y2="10"/>
+                    <line x1="738" y1="37" x2="735" y2="40"/>
+                </g>
+                
+                <!-- Flowers -->
+                <g>
+                    <!-- Flower 1 -->
+                    <circle cx="50" cy="60" r="6" fill="#FF69B4"/>
+                    <circle cx="45" cy="55" r="4" fill="#FFB6C1"/>
+                    <circle cx="55" cy="55" r="4" fill="#FFB6C1"/>
+                    <circle cx="45" cy="65" r="4" fill="#FFB6C1"/>
+                    <circle cx="55" cy="65" r="4" fill="#FFB6C1"/>
+                    <circle cx="50" cy="60" r="3" fill="#FFD700"/>
+                    
+                    <!-- Flower 2 -->
+                    <circle cx="150" cy="65" r="5" fill="#9370DB"/>
+                    <circle cx="146" cy="61" r="3" fill="#DDA0DD"/>
+                    <circle cx="154" cy="61" r="3" fill="#DDA0DD"/>
+                    <circle cx="146" cy="69" r="3" fill="#DDA0DD"/>
+                    <circle cx="154" cy="69" r="3" fill="#DDA0DD"/>
+                    <circle cx="150" cy="65" r="2" fill="#FFD700"/>
+                </g>
+                
+                <!-- Grass -->
+                <g stroke="#228B22" stroke-width="2" stroke-linecap="round">
+                    <line x1="30" y1="75" x2="28" y2="65"/>
+                    <line x1="35" y1="75" x2="37" y2="67"/>
+                    <line x1="40" y1="75" x2="38" y2="66"/>
+                    <line x1="170" y1="75" x2="168" y2="64"/>
+                    <line x1="175" y1="75" x2="177" y2="66"/>
+                    <line x1="650" y1="75" x2="648" y2="65"/>
+                    <line x1="655" y1="75" x2="657" y2="67"/>
+                    <line x1="660" y1="75" x2="658" y2="66"/>
+                </g>
+                
+            <h1>Mira's Yard</h1>
+        </div>
+        
+        <!-- Main game area with integrated toolbar -->
+        <div class="game-area">
+            <canvas id="garden-canvas"></canvas>
+            
+            <!-- Toolbar positioned at top of canvas -->
+            <div class="toolbar">
+                <!-- Create Tools Group (Reordered) -->
+                <div class="tool-group create-tools">
+                    <div class="tool" id="water-tool" data-tool="water">
+                        <div class="tool-icon hose-icon">
+                            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Hose coil -->
+                                <path d="M8,20 Q12,16 16,20 Q20,24 24,20 Q28,16 32,20" stroke="#4CAF50" stroke-width="3" fill="none"/>
+                                <!-- Water spray -->
+                                <circle cx="34" cy="18" r="2" fill="#4FC3F7" opacity="0.8"/>
+                                <circle cx="36" cy="20" r="1.5" fill="#4FC3F7" opacity="0.6"/>
+                                <circle cx="35" cy="22" r="1" fill="#4FC3F7" opacity="0.7"/>
+                                <circle cx="37" cy="17" r="1" fill="#4FC3F7" opacity="0.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="tool" id="vegetable-tool" data-tool="vegetable">
+                        <div class="tool-icon">🥕</div>
+                    </div>
+                    <div class="tool" id="flower-tool" data-tool="flower">
+                        <div class="tool-icon">🌸</div>
+                    </div>
+                    <div class="tool" id="butterfly-tool" data-tool="butterfly">
+                        <div class="tool-icon">🦋</div>
+                    </div>
+                    <div class="tool" id="paint-tool" data-tool="paint">
+                        <div class="tool-icon">🎨</div>
+                    </div>
+                    <div class="tool" id="rainbow-tool" data-tool="rainbow">
+                        <div class="tool-icon">🌈</div>
+                    </div>
+                    <div class="tool" id="shapes-tool" data-tool="shapes">
+                        <div class="tool-icon">⭐</div>
+                    </div>
+                </div>
+                
+                <!-- Remove Tools Group (Reordered to match create) -->
+                <div class="tool-group remove-tools">
+                    <div class="tool" id="mower-tool" data-tool="mower">
+                        <div class="tool-icon mower-icon">
+                            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Side-view push lawnmower matching reference image -->
+                                
+                                <!-- Main green mower deck -->
+                                <rect x="6" y="20" width="20" height="8" rx="2" fill="#2E7D32" stroke="#1B5E20" stroke-width="1"/>
+                                
+                                <!-- Black engine housing on top -->
+                                <rect x="9" y="15" width="14" height="7" rx="1" fill="#212121" stroke="#000" stroke-width="0.5"/>
+                                
+                                <!-- Engine details -->
+                                <rect x="11" y="16" width="2" height="4" fill="#424242"/>
+                                <rect x="19" y="16" width="2" height="4" fill="#424242"/>
+                                <circle cx="16" cy="17" r="1" fill="#666"/>
+                                
+                                <!-- Left wheel -->
+                                <circle cx="10" cy="30" r="4" fill="#212121" stroke="#000" stroke-width="1"/>
+                                <circle cx="10" cy="30" r="2.5" fill="#FFFFFF"/>
+                                <circle cx="10" cy="30" r="1" fill="#212121"/>
+                                
+                                <!-- Right wheel -->
+                                <circle cx="22" cy="30" r="4" fill="#212121" stroke="#000" stroke-width="1"/>
+                                <circle cx="22" cy="30" r="2.5" fill="#FFFFFF"/>
+                                <circle cx="22" cy="30" r="1" fill="#212121"/>
+                                
+                                <!-- Long diagonal handle extending up and right -->
+                                <line x1="23" y1="18" x2="36" y2="5" stroke="#212121" stroke-width="2.5" stroke-linecap="round"/>
+                                
+                                <!-- Handle grip at the end -->
+                                <rect x="33" y="3" width="6" height="2" rx="1" fill="#424242"/>
+                                
+                                <!-- Side grass discharge chute -->
+                                <path d="M 26 21 L 32 19 L 32 25 L 26 23 Z" fill="#2E7D32" stroke="#1B5E20" stroke-width="0.5"/>
+                                
+                                <!-- Blade housing shadow -->
+                                <ellipse cx="16" cy="29" rx="8" ry="1.5" fill="#000" opacity="0.2"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="tool" id="pick-vegetable-tool" data-tool="pick-vegetable">
+                        <div class="tool-icon">✋🥕</div>
+                    </div>
+                    <div class="tool" id="pick-flower-tool" data-tool="pick-flower">
+                        <div class="tool-icon">✂️🌸</div>
+                    </div>
+                    <div class="tool" id="butterfly-net-tool" data-tool="butterfly-net">
+                        <div class="tool-icon net-icon">
+                            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Net handle -->
+                                <rect x="18" y="20" width="4" height="18" fill="#8D6E63" rx="2"/>
+                                <!-- Net rim -->
+                                <circle cx="20" cy="15" r="12" fill="none" stroke="#666" stroke-width="2"/>
+                                <!-- Net mesh -->
+                                <g stroke="#999" stroke-width="1" fill="none">
+                                    <line x1="14" y1="10" x2="26" y2="20"/>
+                                    <line x1="26" y1="10" x2="14" y2="20"/>
+                                    <line x1="20" y1="5" x2="20" y2="25"/>
+                                    <line x1="10" y1="15" x2="30" y2="15"/>
+                                    <circle cx="20" cy="15" r="8" stroke="#999" stroke-width="1"/>
+                                    <circle cx="20" cy="15" r="4" stroke="#999" stroke-width="1"/>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="tool" id="broom-tool" data-tool="broom">
+                        <div class="tool-icon">🧹</div>
+                    </div>
+                </div>
+                
+                <!-- Utility Tools Group (Far Right) -->
+                <div class="tool-group utility-tools">
+                    <div class="tool" id="undo-tool" data-tool="undo">
+                        <div class="tool-icon">↶</div>
+                    </div>
+                    <div class="tool" id="reset-tool" data-tool="reset">
+                        <div class="tool-icon">🔄</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Paint Controls Container (appears when paint tool is selected) -->
+            <div class="paint-controls" id="paint-controls">
+                <!-- Color Palette -->
+                <div class="color-palette" id="color-palette">
+                    <div class="color-option" data-color="#FF0000" style="background: #FF0000;"></div>
+                    <div class="color-option" data-color="#FF8C00" style="background: #FF8C00;"></div>
+                    <div class="color-option" data-color="#FFD700" style="background: #FFD700;"></div>
+                    <div class="color-option" data-color="#32CD32" style="background: #32CD32;"></div>
+                    <div class="color-option" data-color="#1E90FF" style="background: #1E90FF;"></div>
+                    <div class="color-option" data-color="#8A2BE2" style="background: #8A2BE2;"></div>
+                    <div class="color-option" data-color="#FF69B4" style="background: #FF69B4;"></div>
+                    <div class="color-option" data-color="#FFFFFF" style="background: #FFFFFF; border: 2px solid #ccc;"></div>
+                </div>
+                
+                <!-- Brush Size Control -->
+                <div class="brush-controls" id="brush-controls">
+                    <div class="brush-size" data-size="5"></div>
+                    <div class="brush-size" data-size="15"></div>
+                    <div class="brush-size" data-size="25"></div>
+                    <div class="brush-size selected" data-size="35"></div>
+                </div>
+            </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
