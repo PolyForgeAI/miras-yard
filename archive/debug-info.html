@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Info</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .debug-box {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .error { background: #ffe6e6; border-color: #ff9999; }
+        .success { background: #e6ffe6; border-color: #99ff99; }
+        .warning { background: #fff9e6; border-color: #ffcc99; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Information</h1>
+    
+    <div class="debug-box" id="protocol-info">
+        <h3>Protocol Check</h3>
+        <div id="protocol-result"></div>
+    </div>
+    
+    <div class="debug-box" id="dom-info">
+        <h3>DOM Elements</h3>
+        <div id="dom-result"></div>
+    </div>
+    
+    <div class="debug-box" id="console-info">
+        <h3>Console Messages</h3>
+        <div id="console-result"></div>
+    </div>
+    
+    <div class="debug-box" id="features-info">
+        <h3>Browser Features</h3>
+        <div id="features-result"></div>
+    </div>
+
+    <script>
+        // Capture console messages
+        const consoleMessages = [];
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = (...args) => {
+            consoleMessages.push({type: 'log', args});
+            originalLog.apply(console, args);
+        };
+        
+        console.error = (...args) => {
+            consoleMessages.push({type: 'error', args});
+            originalError.apply(console, args);
+        };
+        
+        console.warn = (...args) => {
+            consoleMessages.push({type: 'warn', args});
+            originalWarn.apply(console, args);
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Protocol check
+            const protocol = window.location.protocol;
+            const protocolDiv = document.getElementById('protocol-result');
+            if (protocol === 'file:') {
+                protocolDiv.innerHTML = `<span style="color: red;">⚠️ Running on ${protocol} - this may cause issues. Try running from http:// server instead.</span>`;
+                protocolDiv.parentElement.className += ' warning';
+            } else {
+                protocolDiv.innerHTML = `<span style="color: green;">✅ Running on ${protocol}</span>`;
+                protocolDiv.parentElement.className += ' success';
+            }
+            
+            // DOM elements check
+            const domDiv = document.getElementById('dom-result');
+            const splash = document.getElementById('splash-screen');
+            const gameContainer = document.querySelector('.game-container');
+            const canvas = document.getElementById('garden-canvas');
+            
+            domDiv.innerHTML = `
+                <p>Splash screen: ${splash ? '✅ Found' : '❌ Missing'}</p>
+                <p>Game container: ${gameContainer ? '✅ Found' : '❌ Missing'}</p>
+                <p>Garden canvas: ${canvas ? '✅ Found' : '❌ Missing'}</p>
+            `;
+            
+            // Browser features check
+            const featuresDiv = document.getElementById('features-result');
+            const features = {
+                'Canvas 2D': !!document.createElement('canvas').getContext('2d'),
+                'WebGL': !!document.createElement('canvas').getContext('webgl'),
+                'WebGL2': !!document.createElement('canvas').getContext('webgl2'),
+                'Speech Synthesis': 'speechSynthesis' in window,
+                'Local Storage': 'localStorage' in window,
+                'Touch Events': 'ontouchstart' in window
+            };
+            
+            featuresDiv.innerHTML = Object.entries(features)
+                .map(([name, supported]) => 
+                    `<p>${name}: ${supported ? '✅' : '❌'}</p>`
+                ).join('');
+            
+            // Show console messages after a delay
+            setTimeout(() => {
+                const consoleDiv = document.getElementById('console-result');
+                if (consoleMessages.length === 0) {
+                    consoleDiv.innerHTML = '<p>No console messages captured</p>';
+                } else {
+                    consoleDiv.innerHTML = consoleMessages
+                        .map(msg => `<p><strong>${msg.type}:</strong> ${msg.args.join(' ')}</p>`)
+                        .join('');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

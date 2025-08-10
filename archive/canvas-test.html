@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', Arial, sans-serif;
+            background: #333;
+            color: white;
+        }
+        
+        .splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+        
+        .splash h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .splash p {
+            font-size: 24px;
+        }
+        
+        .game {
+            width: 100%;
+            height: 100vh;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background: #87CEEB;
+            position: relative;
+        }
+        
+        .game.show {
+            display: flex;
+        }
+        
+        .splash.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        canvas {
+            border: 4px solid #8B4513;
+            border-radius: 15px;
+            touch-action: none;
+            background: #7CB342;
+        }
+        
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        .tools {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+        
+        .tool {
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .tool:hover, .tool.active {
+            transform: scale(1.1);
+            background: #FFD700;
+        }
+    </style>
+</head>
+<body>
+    <div class="splash" id="splash">
+        <h1>🌻 Mira's Yard 🌻</h1>
+        <p>Tap anywhere to start gardening!</p>
+    </div>
+    
+    <div class="game" id="game">
+        <div class="ui" id="ui">
+            ⭐ <span id="stars">0</span> | 🌸 <span id="flowers">0</span> | 🥕 <span id="vegetables">0</span>
+        </div>
+        
+        <canvas id="garden" width="800" height="600"></canvas>
+        
+        <div class="tools">
+            <button class="tool active" data-tool="water">💧</button>
+            <button class="tool" data-tool="flower">🌸</button>
+            <button class="tool" data-tool="vegetable">🥕</button>
+            <button class="tool" data-tool="mower">🚜</button>
+            <button class="tool" data-tool="reset">🔄</button>
+        </div>
+    </div>
+
+    <script>
+        console.log('=== CANVAS TEST STARTING ===');
+        
+        class SimpleGarden {
+            constructor() {
+                this.canvas = document.getElementById('garden');
+                this.ctx = this.canvas.getContext('2d');
+                this.currentTool = 'water';
+                
+                // Game state
+                this.plants = [];
+                this.waterDrops = [];
+                this.effects = [];
+                this.stars = 0;
+                this.flowers = 0;
+                this.vegetables = 0;
+                
+                // Setup
+                this.setupEventListeners();
+                this.gameLoop();
+                
+                console.log('Garden initialized');
+            }
+            
+            setupEventListeners() {
+                // Tool buttons
+                document.querySelectorAll('.tool').forEach(tool => {
+                    tool.addEventListener('click', () => {
+                        document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
+                        tool.classList.add('active');
+                        this.currentTool = tool.dataset.tool;
+                        console.log('Tool changed to:', this.currentTool);
+                    });
+                });
+                
+                // Canvas clicks
+                this.canvas.addEventListener('click', (e) => this.handleClick(e));
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.handleClick(e.touches[0]);
+                }, { passive: false });
+                
+                console.log('Event listeners setup');
+            }
+            
+            handleClick(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+                
+                console.log(`${this.currentTool} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
+                
+                switch(this.currentTool) {
+                    case 'water':
+                        this.addWater(x, y);
+                        this.speakPraise('Good watering!');
+                        break;
+                    case 'flower':
+                        this.plantFlower(x, y);
+                        this.speakPraise('Beautiful flower!');
+                        break;
+                    case 'vegetable':
+                        this.plantVegetable(x, y);
+                        this.speakPraise('Nice planting!');
+                        break;
+                    case 'mower':
+                        this.mowGrass(x, y);
+                        this.speakPraise('Great mowing!');
+                        break;
+                    case 'reset':
+                        this.reset();
+                        this.speakPraise('Fresh new garden!');
+                        break;
+                }
+                
+                this.updateUI();
+            }
+            
+            addWater(x, y) {
+                for (let i = 0; i < 5; i++) {
+                    this.waterDrops.push({
+                        x: x + (Math.random() - 0.5) * 30,
+                        y: y + (Math.random() - 0.5) * 30,
+                        life: 60
+                    });
+                }
+            }
+            
+            plantFlower(x, y) {
+                const flowers = ['🌸', '🌺', '🌻', '🌷', '🌹'];
+                this.plants.push({
+                    x, y,
+                    emoji: flowers[Math.floor(Math.random() * flowers.length)],
+                    type: 'flower',
+                    size: 30
+                });
+                this.flowers++;
+                this.stars++;
+            }
+            
+            plantVegetable(x, y) {
+                const vegetables = ['🥕', '🍅', '🌽', '🥒'];
+                this.plants.push({
+                    x, y,
+                    emoji: vegetables[Math.floor(Math.random() * vegetables.length)],
+                    type: 'vegetable',
+                    size: 25
+                });
+                this.vegetables++;
+                this.stars++;
+            }
+            
+            mowGrass(x, y) {
+                // Create grass clippings effect
+                for (let i = 0; i < 10; i++) {
+                    this.effects.push({
+                        x: x + (Math.random() - 0.5) * 50,
+                        y: y + (Math.random() - 0.5) * 50,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: -Math.random() * 3,
+                        life: 30,
+                        type: 'grass'
+                    });
+                }
+                this.stars++;
+            }
+            
+            reset() {
+                this.plants = [];
+                this.waterDrops = [];
+                this.effects = [];
+                this.stars = 0;
+                this.flowers = 0;
+                this.vegetables = 0;
+            }
+            
+            speakPraise(message) {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(message);
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.5;
+                    speechSynthesis.cancel();
+                    speechSynthesis.speak(utterance);
+                }
+                console.log('Praise:', message);
+            }
+            
+            updateUI() {
+                document.getElementById('stars').textContent = this.stars;
+                document.getElementById('flowers').textContent = this.flowers;
+                document.getElementById('vegetables').textContent = this.vegetables;
+            }
+            
+            update() {
+                // Update water drops
+                this.waterDrops = this.waterDrops.filter(drop => {
+                    drop.life--;
+                    return drop.life > 0;
+                });
+                
+                // Update effects
+                this.effects = this.effects.filter(effect => {
+                    effect.x += effect.vx;
+                    effect.y += effect.vy;
+                    effect.vy += 0.2; // Gravity
+                    effect.life--;
+                    return effect.life > 0;
+                });
+            }
+            
+            render() {
+                // Clear canvas
+                this.ctx.fillStyle = '#7CB342';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw grass texture
+                this.ctx.strokeStyle = 'rgba(93, 140, 47, 0.3)';
+                this.ctx.lineWidth = 1;
+                for (let x = 0; x < this.canvas.width; x += 20) {
+                    for (let y = 0; y < this.canvas.height; y += 20) {
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(x, y);
+                        this.ctx.lineTo(x - 1, y - 8);
+                        this.ctx.stroke();
+                    }
+                }
+                
+                // Draw water drops
+                this.ctx.fillStyle = 'rgba(76, 195, 247, 0.6)';
+                this.waterDrops.forEach(drop => {
+                    const alpha = drop.life / 60;
+                    this.ctx.globalAlpha = alpha;
+                    this.ctx.beginPath();
+                    this.ctx.arc(drop.x, drop.y, 4, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+                this.ctx.globalAlpha = 1;
+                
+                // Draw effects
+                this.ctx.fillStyle = '#4CAF50';
+                this.effects.forEach(effect => {
+                    if (effect.type === 'grass') {
+                        this.ctx.fillRect(effect.x, effect.y, 3, 6);
+                    }
+                });
+                
+                // Draw plants
+                this.ctx.font = '30px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.plants.forEach(plant => {
+                    // Shadow
+                    this.ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                    this.ctx.fillText(plant.emoji, plant.x + 2, plant.y + 2);
+                    
+                    // Main emoji
+                    this.ctx.fillStyle = 'black';
+                    this.ctx.fillText(plant.emoji, plant.x, plant.y);
+                });
+            }
+            
+            gameLoop() {
+                this.update();
+                this.render();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM ready');
+            
+            const splash = document.getElementById('splash');
+            const game = document.getElementById('game');
+            let garden = null;
+            
+            const startGame = () => {
+                console.log('Starting garden...');
+                
+                // Hide splash
+                splash.classList.add('hide');
+                
+                // Show game after transition
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                    game.classList.add('show');
+                    
+                    // Initialize garden
+                    garden = new SimpleGarden();
+                    
+                    console.log('Garden started!');
+                }, 500);
+            };
+            
+            // Click/touch to start
+            splash.addEventListener('click', startGame);
+            splash.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startGame();
+            }, { passive: false });
+            
+            // Auto-start after 3 seconds
+            setTimeout(startGame, 3000);
+        });
+        
+        console.log('=== CANVAS TEST LOADED ===');
+    </script>
+</body>
+</html>

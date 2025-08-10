@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reset Button Debug</title>
+</head>
+<body>
+    <button id="reset-test" data-tool="reset">Reset Test</button>
+    <script>
+        console.log('Debug page loaded');
+        
+        const button = document.getElementById('reset-test');
+        button.addEventListener('click', () => {
+            console.log('Reset button clicked!');
+            console.log('Dataset tool:', button.dataset.tool);
+        });
+        
+        console.log('Event listener added');
+    </script>
+</body>
+</html>
