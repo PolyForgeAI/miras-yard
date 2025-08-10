@@ -8,7 +8,21 @@
       "Bash(git commit:*)",
       "Bash(git branch:*)",
       "Bash(git remote add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(start debug-info.html)",
+      "Bash(start canvas-test.html)",
+      "Bash(sed:*)",
+      "Bash(grep:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(findstr:*)",
+      "Bash(rg:*)",
+      "Bash(mkdir:*)",
+      "Bash(rmdir:*)",
+      "Bash(start chrome:*)",
+      "Bash(git reset:*)",
+      "Bash(rm:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }
